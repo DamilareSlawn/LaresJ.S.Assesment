@@ -1,22 +1,22 @@
 /**
  * User Registration Validation Script (Prompt/Alert Only)
- * Uses a WHILE loop for each field to enforce validation rules before proceeding.
+ * All emojis have been removed. Uses a WHILE loop for each field 
+ * and includes immediate cancellation if the age is under 18.
  */
 
-// --- 1. Validation Helper Functions (Returns error message or "") ---
+// --- 1. Validation Helper Functions ---
 
 function checkFullName(name) {
     if (!name || !name.trim()) return "Full Name is required.";
-    // Rule: contain at least 2 words.
     const words = name.trim().split(/\s+/).filter(word => word.length > 0);
     if (words.length < 2) return "Must contain at least two words.";
-    return ""; // Valid
+    return ""; 
 }
 
 function checkEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; 
     if (!email || !emailRegex.test(email)) return "Invalid email format (e.g., example@domain.com).";
-    return ""; // Valid
+    return ""; 
 }
 
 function checkPassword(password) {
@@ -25,13 +25,20 @@ function checkPassword(password) {
     if (!/[A-Z]/.test(password)) return "Must contain at least one uppercase letter.";
     if (!/[0-9]/.test(password)) return "Must contain at least one number.";
     if (!/[^A-Za-z0-9\s]/.test(password)) return "Must contain at least one special character.";
-    return ""; // Valid
+    return ""; 
+}
+
+function checkConfirmPassword(password, confirmPassword) {
+    if (!confirmPassword) return "Confirmation password is required.";
+    if (password !== confirmPassword) return "Passwords do not match.";
+    return ""; 
 }
 
 function checkAge(age) {
     const ageValue = parseInt(age, 10);
-    if (isNaN(ageValue) || ageValue < 18) return "You must be 18 or older to register.";
-    return ""; // Valid
+    if (isNaN(ageValue) || ageValue < 1) return "Age cannot be zero or empty."; 
+    if (ageValue < 18) return "AGE_TOO_YOUNG"; // Flag remains for internal cancellation logic
+    return ""; 
 }
 
 // --- 2. Main Execution Function with Blocking Loops ---
@@ -42,62 +49,73 @@ function registerUser() {
     let fullName, email, password, confirmPassword, age;
     let error;
 
-    // --- 1. Full Name Input and Blocking Validation ---
+    // 1. Full Name Input
     do {
         fullName = prompt("1/5. Enter Full Name (Must be 2+ words):", fullName || "");
-        if (fullName === null) { alert("Registration cancelled."); return; } // User hit Cancel
+        if (fullName === null) { alert("Registration cancelled."); return; }
         error = checkFullName(fullName);
-        if (error) {
-            alert(`Full Name Error: ${error}\nPlease try again.`);
-        }
-    } while (error); // Loop runs while error is NOT empty ("")
+        if (error) alert(`Full Name Error: ${error}\nPlease try again.`);
+    } while (error);
 
-    // --- 2. Email Input and Blocking Validation ---
+    // 2. Email Input
     do {
         email = prompt("2/5. Enter Email Address (e.g., user@domain.com):", email || "");
         if (email === null) { alert("Registration cancelled."); return; }
         error = checkEmail(email);
-        if (error) {
-            alert(`Email Error: ${error}\nPlease try again.`);
-        }
+        if (error) alert(`Email Error: ${error}\nPlease try again.`);
     } while (error);
 
-    // --- 3. Password Input and Blocking Validation ---
+    // 3. Password Input
     do {
-        password = prompt("3/5. Enter Password (Min 8 chars, 1 Upper, 1 Number, 1 Special):", password || "");
+        password = prompt("3/5. Enter Password:", password || "");
         if (password === null) { alert("Registration cancelled."); return; }
         error = checkPassword(password);
-        if (error) {
-            alert(`Password Error: ${error}\nPlease try again.`);
-        }
+        if (error) alert(`Password Error: ${error}\nPlease try again.`);
     } while (error);
 
-    // --- 4. Confirm Password Input and Blocking Validation ---
+    // 4. Confirm Password Input
     do {
-        confirmPassword = prompt("4/5. Confirm Password (Must match the previous password):", confirmPassword || "");
+        confirmPassword = prompt("4/5. Confirm Password:", confirmPassword || "");
         if (confirmPassword === null) { alert("Registration cancelled."); return; }
-        // The checkConfirmPassword function needs the valid 'password' from the previous step
-        let confirmError = checkPassword(password) || checkConfirmPassword(password, confirmPassword);
-        error = confirmError;
-
-        if (error) {
-            alert(`Confirm Password Error: ${error}\nPlease try again.`);
+        
+        // Use a temporary variable to check if the main password itself has an issue.
+        let mainPwError = checkPassword(password);
+        let mismatchError = checkConfirmPassword(password, confirmPassword);
+        
+        if (mainPwError) {
+             // If main password is bad, we just alert the user to fix the main password.
+            alert("Please fix the main Password (3/5) before confirming.");
+            error = mainPwError; // Keep loop running if main password is bad
+        } else if (mismatchError) {
+             // If main password is good but confirmation is bad
+            alert(`Confirm Password Error: ${mismatchError}\nPlease try again.`);
+            error = mismatchError;
+        } else {
+            error = ""; // Valid
         }
     } while (error);
     
-    // --- 5. Age Input and Blocking Validation ---
+    // 5. Age Input and Immediate Cancellation
     do {
         age = prompt("5/5. Enter Age (Must be 18 or older):", age || "");
         if (age === null) { alert("Registration cancelled."); return; }
         error = checkAge(age);
+        
+        if (error === "AGE_TOO_YOUNG") {
+            // Immediate cancellation logic
+            alert("Sorry, you have to be 18 years or above to register. Registration is cancelled.");
+            return; // EXIT the function immediately
+        }
+        
         if (error) {
-            alert(`Age Error: ${error}\nPlease try again.`);
+            // General age input error 
+            alert(`Age Input Error: Age must be a valid number 1 or above.\nPlease try again.`);
         }
     } while (error);
 
 
     // --- Final Success Feedback ---
-    alert(`✅ SUCCESS! Registration Complete for ${fullName}.\n\nThank you for registering!`);
+    alert(`SUCCESS! Registration Complete for ${fullName}.`);
 }
 
 // Execute the function to start the process
